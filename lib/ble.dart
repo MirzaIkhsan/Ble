@@ -1,12 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
-
-import 'package:flutter/services.dart';
 import 'package:ble/BaseEvent.dart';
 import 'package:ble/DeviceBle.dart';
 import 'package:ble/EventChannelConstant.dart';
+import 'package:flutter/services.dart';
 
 class Ble {
   factory Ble() => getInstance();
@@ -15,9 +12,9 @@ class Ble {
   static const MethodChannel _channel = const MethodChannel('flutter_ble');
 
   ///监听器
-  DeviceListener deviceListener;
+  DeviceListener? deviceListener;
 
-  static Ble _Ble;
+  static final Ble _instance = Ble._init();
 
   ///初始化消息通道
   Ble._init() {
@@ -25,10 +22,7 @@ class Ble {
   }
 
   static Ble getInstance() {
-    if (null == _Ble) {
-      _Ble = Ble._init();
-    }
-    return _Ble;
+    return _instance;
   }
 
   /// 设置时间监听，需要监听一些状态的页面继承 DeviceListener接口即可
@@ -128,7 +122,7 @@ class Ble {
         'setNotifyCharactor', {"uuid": uuid, "isNotify": isNotify});
   }
 
-  StreamSubscription<dynamic> eventStreamSubscription;
+  StreamSubscription<dynamic>? eventStreamSubscription;
 
   initEvent() {
     eventStreamSubscription = _eventChannerFor()
@@ -166,46 +160,46 @@ class Ble {
         List<DeviceBle> devices =
             responseJson.map((e) => DeviceBle.fromJson(jsonDecode(e))).toList();
         if (this.deviceListener != null) {
-          deviceListener.onFoundDevice(devices);
+          deviceListener?.onFoundDevice(devices);
         } else {
           print("deviceListener:" + deviceListener.toString());
         }
         break;
       case EventChannelConstant.START_SACN: //开始蓝牙扫描
         if (this.deviceListener != null) {
-          deviceListener.onScanStart();
+          deviceListener?.onScanStart();
         }
         break;
       case EventChannelConstant.STOP_SACN: //停止蓝牙扫描
         if (this.deviceListener != null) {
-          deviceListener.onScanStop();
+          deviceListener?.onScanStop();
         }
         break;
       case EventChannelConstant.STATE_CONNECTED: //蓝牙状态改变，蓝牙连接上了
         if (this.deviceListener != null) {
           deviceListener
-              .onConnectionStateChange(EventChannelConstant.STATE_CONNECTED);
+              ?.onConnectionStateChange(EventChannelConstant.STATE_CONNECTED);
         }
         break;
       case EventChannelConstant.STATE_RECONNECTED:
         if (this.deviceListener != null) {
-          deviceListener.onReConnected();
+          deviceListener?.onReConnected();
         }
         break;
       case EventChannelConstant.STATE_DISCONNECTED: //蓝牙状态改变，蓝牙连接断开
         if (this.deviceListener != null) {
-          deviceListener
-              .onConnectionStateChange(EventChannelConstant.STATE_DISCONNECTED);
+          deviceListener?.onConnectionStateChange(
+              EventChannelConstant.STATE_DISCONNECTED);
         }
         break;
       case EventChannelConstant.GATT_SERVICES_DISCOVERED: //发现可用的服务
         if (this.deviceListener != null) {
-          deviceListener.onServicesDiscovered();
+          deviceListener?.onServicesDiscovered();
         }
         break;
       case EventChannelConstant.DOES_NOT_SUPPORT_UART: //服务不支持
         if (this.deviceListener != null) {
-          deviceListener.onServicesNotSupport();
+          deviceListener?.onServicesNotSupport();
         }
         break;
       case EventChannelConstant.DATA_AVAILABLE: //收到蓝牙发送过来的数据
@@ -215,17 +209,17 @@ class Ble {
         List<String> list = data.map((e) => e.toString()).toList();
         // print(String.fromCharCodes(list));//ascall转换为String
         if (this.deviceListener != null) {
-          deviceListener.onReceivedDataListener(data);
+          deviceListener?.onReceivedDataListener(data);
         }
         break;
       case EventChannelConstant.BLUETOOTHOFF: //蓝牙关闭通知
         if (this.deviceListener != null) {
-          deviceListener.onBluetoothOff();
+          deviceListener?.onBluetoothOff();
         }
         break;
       case EventChannelConstant.BLUETOOTHON: //蓝牙开启通知
         if (this.deviceListener != null) {
-          deviceListener.onBluetoothOn();
+          deviceListener?.onBluetoothOn();
         }
         break;
       case EventChannelConstant.SERVICE_CHARACTERISTICS: //蓝牙开启通知
@@ -234,7 +228,7 @@ class Ble {
           print("key:" + key + "-> value:" + value.toString());
         });
         if (this.deviceListener != null) {
-          deviceListener.onServiceCharac(responseJson);
+          deviceListener?.onServiceCharac(responseJson);
         }
         break;
     }
@@ -242,8 +236,8 @@ class Ble {
 
   //消息通道错误回调方法
   errorListener(Object obj) {
-    final PlatformException e = obj;
-    throw e;
+    // final PlatformException e = obj;
+    // throw e;
   }
 }
 

@@ -94,20 +94,37 @@ public class BlePlugin implements FlutterPlugin, MethodCallHandler, ActivityAwar
     }
   };
 
+  public static void registerWith(Registrar registrar) {
+    System.out.println("registerWith************");
+    final MethodChannel channel = new MethodChannel(registrar.messenger(), "flutter_ble");
+    channel.setMethodCallHandler(new BlePlugin());
+  }
 
   @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
     System.out.println("onAttachedToEngine**********");
-    channel = new MethodChannel(flutterPluginBinding.getFlutterEngine().getDartExecutor(), "flutter_ble");
+    // channel = new MethodChannel(flutterPluginBinding.getFlutterEngine().getDartExecutor(), "flutter_ble");
+    channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "flutter_ble");
     channel.setMethodCallHandler(this);
-    EventChannel eventChannel = new EventChannel(flutterPluginBinding.getFlutterEngine().getDartExecutor(), "flutter_ble_event");
+
+    // EventChannel eventChannel = new EventChannel(flutterPluginBinding.getFlutterEngine().getDartExecutor(), "flutter_ble_event");
+    EventChannel eventChannel = new EventChannel(flutterPluginBinding.getBinaryMessenger(), "flutter_ble_event");
     eventChannel.setStreamHandler(streamHandler);
+    
     mContext = flutterPluginBinding.getApplicationContext();
     initBluetoothAdapter();
     initService();
   }
 
+  @Override
+  public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
+    Log.d(TAG, "onDetachedFromEngine: *************");
+    // 释放资源，解绑服务和取消注册广播
+    channel.setMethodCallHandler(null);
+    mContext.unbindService(mServiceConnection);
+    LocalBroadcastManager.getInstance(mContext).unregisterReceiver(mBleStatusChangeReceiver);
+  }
 
   // 初始化蓝牙适配器
   private void initBluetoothAdapter() {
@@ -509,12 +526,6 @@ public class BlePlugin implements FlutterPlugin, MethodCallHandler, ActivityAwar
   // them functionally equivalent. Only one of onAttachedToEngine or registerWith will be called
   // depending on the user's project. onAttachedToEngine or registerWith must both be defined
   // in the same class.
-  public static void registerWith(Registrar registrar) {
-    System.out.println("registerWith************");
-    final MethodChannel channel = new MethodChannel(registrar.messenger(), "flutter_ble");
-    channel.setMethodCallHandler(new BlePlugin());
-
-  }
 
   // flutter调用原生Android处理方法
   @Override
@@ -595,15 +606,6 @@ public class BlePlugin implements FlutterPlugin, MethodCallHandler, ActivityAwar
       System.out.println(bytes[i]);
     }
     return bytes;
-  }
-
-  @Override
-  public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-    Log.d(TAG, "onDetachedFromEngine: *************");
-    // 释放资源，解绑服务和取消注册广播
-    channel.setMethodCallHandler(null);
-    mContext.unbindService(mServiceConnection);
-    LocalBroadcastManager.getInstance(mContext).unregisterReceiver(mBleStatusChangeReceiver);
   }
 
   @Override
